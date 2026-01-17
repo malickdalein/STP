@@ -15,8 +15,10 @@ import {
   SkipBack,
   SkipForward,
   BookOpen,
+  AlertCircle,
 } from "lucide-react";
 import type { Article, PodcastEpisode } from "@/types";
+import { AIInsightsPanel } from "./ai-insights-panel";
 
 export function ReaderView() {
   const { items, selectedItemId, setSelectedItem, toggleFavorite, toggleArchive, updateProgress, settings } =
@@ -272,6 +274,33 @@ export function ReaderView() {
                 <ExternalLink className="h-4 w-4" />
                 View Original
               </a>
+            </div>
+          )}
+
+          {/* AI Insights Panel */}
+          <div className="mt-10">
+            <AIInsightsPanel item={item} />
+          </div>
+
+          {/* No Audio Warning for Podcasts */}
+          {isPodcast && !podcast.audioUrl && (
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+              <div>
+                <p className="font-medium text-amber-800">Audio not available</p>
+                <p className="mt-1 text-sm text-amber-700">
+                  We couldn't extract the audio from this podcast. You can still{" "}
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-amber-900"
+                  >
+                    listen on the original site
+                  </a>
+                  .
+                </p>
+              </div>
             </div>
           )}
         </article>

@@ -1,6 +1,15 @@
 export type ContentType = "article" | "podcast" | "tweet" | "video" | "link";
 export type ContentStatus = "unread" | "in_progress" | "completed";
 
+export interface AIAnalysis {
+  summary?: string;
+  keyPoints?: string[];
+  suggestedTags?: string[];
+  difficulty?: "Easy" | "Medium" | "Hard";
+  contentType?: string;
+  generatedAt?: string;
+}
+
 export interface ContentItem {
   id: string;
   type: ContentType;
@@ -28,6 +37,9 @@ export interface ContentItem {
 
   // Sync
   updatedAt: string;
+
+  // AI Analysis
+  aiAnalysis?: AIAnalysis;
 }
 
 export interface Article extends ContentItem {
@@ -87,6 +99,12 @@ export interface UserSettings {
     skipForward: number;
     skipBack: number;
   };
+  ai: {
+    apiKey?: string;
+    provider: "openai" | "anthropic";
+    autoSummarize: boolean;
+    autoTag: boolean;
+  };
 }
 
 export const defaultSettings: UserSettings = {
@@ -100,5 +118,10 @@ export const defaultSettings: UserSettings = {
     defaultSpeed: 1,
     skipForward: 30,
     skipBack: 15,
+  },
+  ai: {
+    provider: "openai",
+    autoSummarize: false,
+    autoTag: false,
   },
 };

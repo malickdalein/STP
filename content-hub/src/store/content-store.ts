@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
-import type { ContentItem, Article, Folder, Tag, ViewMode, UserSettings, defaultSettings } from "@/types";
+import type { ContentItem, Article, Folder, Tag, ViewMode, UserSettings, AIAnalysis } from "@/types";
 
 interface ContentState {
   items: ContentItem[];
@@ -38,6 +38,10 @@ interface ContentState {
   setSearchQuery: (query: string) => void;
 
   updateSettings: (settings: Partial<UserSettings>) => void;
+
+  // AI Actions
+  updateAIAnalysis: (id: string, analysis: AIAnalysis) => void;
+  applyAISuggestedTags: (id: string) => void;
 }
 
 export const useContentStore = create<ContentState>()(
@@ -57,6 +61,11 @@ export const useContentStore = create<ContentState>()(
           defaultSpeed: 1,
           skipForward: 30,
           skipBack: 15,
+        },
+        ai: {
+          provider: "openai",
+          autoSummarize: false,
+          autoTag: false,
         },
       },
 
@@ -227,8 +236,39 @@ export const useContentStore = create<ContentState>()(
             ...newSettings,
             reader: { ...state.settings.reader, ...newSettings.reader },
             podcast: { ...state.settings.podcast, ...newSettings.podcast },
+            ai: { ...state.settings.ai, ...newSettings.ai },
           },
         }));
+      },
+
+      updateAIAnalysis: (id, analysis) => {
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  aiAnalysis: {
+                    ...item.aiAnalysis,
+                    ...analysis,
+                    generatedAt: new Date().toISOString(),
+                  },
+                  updatedAt: new Date().toISOString(),
+                }
+              : item
+          ),
+        }));
+      },
+
+      applyAISuggestedTags: (id) => {
+        const item = get().items.find((i) => i.id === id);
+        if (item?.aiAnalysis?.suggestedTags) {
+          const newTags = item.aiAnalysis.suggestedTags.filter(
+            (tag) => !item.tags.includes(tag)
+          );
+          if (newTags.length > 0) {
+            newTags.forEach((tag) => get().addTagToItem(id, tag));
+          }
+        }
       },
     }),
     {
