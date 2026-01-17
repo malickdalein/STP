@@ -11,7 +11,7 @@ export default function Home() {
   const { selectedItemId } = useContentStore();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-900">
+    <div className="flex h-screen overflow-hidden bg-[var(--paper)]">
       {/* Sidebar */}
       <Sidebar />
 
@@ -21,14 +21,14 @@ export default function Home() {
 
         <div className="flex flex-1 overflow-hidden">
           {/* Content List */}
-          <div className="w-full max-w-xl flex-shrink-0 overflow-hidden border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="w-full max-w-xl flex-shrink-0 overflow-hidden border-r border-[var(--border)] bg-[var(--surface)]">
             <ScrollArea className="h-full">
               <ContentList />
             </ScrollArea>
           </div>
 
           {/* Reader/Detail View */}
-          <div className="hidden flex-1 overflow-hidden lg:block">
+          <div className="hidden flex-1 overflow-hidden bg-[var(--paper-warm)] lg:block">
             <ReaderView />
           </div>
         </div>
@@ -36,7 +36,7 @@ export default function Home() {
 
       {/* Mobile Reader Overlay */}
       {selectedItemId && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 bg-[var(--surface)] lg:hidden animate-slide-up">
           <ReaderView />
         </div>
       )}

@@ -9,12 +9,10 @@ import {
   Archive,
   Star,
   Folder,
-  Tag,
-  Plus,
+  Hash,
   Settings,
-  ChevronRight,
+  Sparkles,
 } from "lucide-react";
-import type { ViewMode } from "@/types";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -29,18 +27,41 @@ function NavItem({ icon, label, count, active, onClick }: NavItemProps) {
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+        "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200",
         active
-          ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
-          : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/50 dark:hover:text-white"
+          ? "bg-[var(--accent)] text-white font-medium shadow-sm"
+          : "text-[var(--ink-light)] hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
       )}
     >
-      {icon}
+      <span className={cn(
+        "transition-transform duration-200",
+        !active && "group-hover:scale-110"
+      )}>
+        {icon}
+      </span>
       <span className="flex-1 text-left">{label}</span>
       {count !== undefined && count > 0 && (
-        <span className="text-xs text-neutral-400">{count}</span>
+        <span className={cn(
+          "min-w-[1.25rem] rounded-full px-1.5 py-0.5 text-center text-xs font-medium tabular-nums",
+          active
+            ? "bg-white/20 text-white"
+            : "bg-[var(--border)] text-[var(--ink-muted)]"
+        )}>
+          {count}
+        </span>
       )}
     </button>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 flex items-center gap-2 px-3">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ink-muted)]">
+        {children}
+      </span>
+      <div className="h-px flex-1 bg-[var(--border)]" />
+    </div>
   );
 }
 
@@ -57,18 +78,26 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+    <aside className="flex h-full w-64 flex-col border-r border-[var(--border)] bg-[var(--surface)]">
       {/* Logo */}
-      <div className="flex h-14 items-center gap-2 border-b border-neutral-200 px-4 dark:border-neutral-800">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
-          <BookOpen className="h-4 w-4" />
+      <div className="flex h-16 items-center gap-3 border-b border-[var(--border)] px-5">
+        <div className="relative flex h-9 w-9 items-center justify-center">
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] shadow-sm" />
+          <Sparkles className="relative h-4 w-4 text-white" />
         </div>
-        <span className="font-semibold">Content Hub</span>
+        <div className="flex flex-col">
+          <span className="font-display text-lg font-medium tracking-tight text-[var(--ink)]">
+            Readwise
+          </span>
+          <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--ink-muted)]">
+            Content Hub
+          </span>
+        </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-3">
-        <div className="space-y-1">
+        <div className="space-y-1 stagger-children">
           <NavItem
             icon={<Inbox className="h-4 w-4" />}
             label="Inbox"
@@ -92,7 +121,7 @@ export function Sidebar() {
           />
         </div>
 
-        <div className="my-4 border-t border-neutral-200 dark:border-neutral-800" />
+        <div className="my-5" />
 
         <div className="space-y-1">
           <NavItem
@@ -114,12 +143,8 @@ export function Sidebar() {
         {/* Folders */}
         {folders.length > 0 && (
           <>
-            <div className="my-4 border-t border-neutral-200 dark:border-neutral-800" />
-            <div className="mb-2 flex items-center justify-between px-3">
-              <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">
-                Folders
-              </span>
-            </div>
+            <div className="my-5" />
+            <SectionLabel>Collections</SectionLabel>
             <div className="space-y-1">
               {folders.map((folder) => (
                 <NavItem
@@ -138,17 +163,13 @@ export function Sidebar() {
         {/* Tags */}
         {tags.length > 0 && (
           <>
-            <div className="my-4 border-t border-neutral-200 dark:border-neutral-800" />
-            <div className="mb-2 flex items-center justify-between px-3">
-              <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">
-                Tags
-              </span>
-            </div>
+            <div className="my-5" />
+            <SectionLabel>Tags</SectionLabel>
             <div className="space-y-1">
               {tags.map((tag) => (
                 <NavItem
                   key={tag.id}
-                  icon={<Tag className="h-4 w-4" />}
+                  icon={<Hash className="h-4 w-4" />}
                   label={tag.name}
                   count={items.filter((i) => i.tags.includes(tag.name) && !i.isArchived).length}
                   active={currentView === "tag" && currentTagId === tag.id}
@@ -160,8 +181,8 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Settings */}
-      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
+      {/* Footer */}
+      <div className="border-t border-[var(--border)] p-3">
         <NavItem
           icon={<Settings className="h-4 w-4" />}
           label="Settings"

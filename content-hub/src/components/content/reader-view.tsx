@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useContentStore } from "@/store/content-store";
 import { formatDate, getDomain, formatDuration } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
-  X,
   Star,
   Archive,
   ExternalLink,
@@ -15,19 +14,19 @@ import {
   Pause,
   SkipBack,
   SkipForward,
+  BookOpen,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { Article, PodcastEpisode, ContentItem } from "@/types";
+import type { Article, PodcastEpisode } from "@/types";
 
 export function ReaderView() {
   const { items, selectedItemId, setSelectedItem, toggleFavorite, toggleArchive, updateProgress, settings } =
     useContentStore();
   const contentRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const item = items.find((i) => i.id === selectedItemId);
 
-  // Track scroll progress for articles
   const handleScroll = useCallback(() => {
     if (!contentRef.current || !item || item.type !== "article") return;
 
@@ -49,8 +48,10 @@ export function ReaderView() {
 
   if (!item) {
     return (
-      <div className="flex h-full items-center justify-center text-neutral-400">
-        <p>Select an item to read</p>
+      <div className="flex h-full flex-col items-center justify-center bg-[var(--paper-warm)] text-[var(--ink-muted)]">
+        <BookOpen className="h-16 w-16 opacity-20" />
+        <p className="mt-6 font-display text-lg">Select something to read</p>
+        <p className="mt-1 text-sm opacity-60">Your content will appear here</p>
       </div>
     );
   }
@@ -60,51 +61,41 @@ export function ReaderView() {
   const article = item as Article;
   const podcast = item as PodcastEpisode;
 
-  const fontSizeClasses = {
-    small: "text-sm",
-    medium: "text-base",
-    large: "text-lg",
-    xlarge: "text-xl",
-  };
-
-  const fontFamilyClasses = {
-    serif: "font-serif",
-    "sans-serif": "font-sans",
-    mono: "font-mono",
-  };
-
-  const lineSpacingClasses = {
-    compact: "leading-normal",
-    normal: "leading-relaxed",
-    relaxed: "leading-loose",
-  };
-
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-neutral-950">
+    <div className="flex h-full flex-col bg-[var(--paper-warm)]">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedItem(undefined)}>
+      <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-5 py-3">
+        <button
+          onClick={() => setSelectedItem(undefined)}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
+        >
           <ChevronLeft className="h-4 w-4" />
           Back
-        </Button>
+        </button>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
+        <div className="flex items-center gap-1">
+          <button
             onClick={() => toggleFavorite(item.id)}
-            className={cn(item.isFavorite && "text-yellow-500")}
+            className={cn(
+              "rounded-lg p-2.5 transition-all duration-200",
+              item.isFavorite
+                ? "bg-amber-100 text-amber-600"
+                : "text-[var(--ink-muted)] hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
+            )}
           >
             <Star className={cn("h-4 w-4", item.isFavorite && "fill-current")} />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => toggleArchive(item.id)}>
+          </button>
+          <button
+            onClick={() => toggleArchive(item.id)}
+            className="rounded-lg p-2.5 text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
+          >
             <Archive className="h-4 w-4" />
-          </Button>
+          </button>
           <a
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md p-0 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="rounded-lg p-2.5 text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
           >
             <ExternalLink className="h-4 w-4" />
           </a>
@@ -114,46 +105,48 @@ export function ReaderView() {
       {/* Content */}
       <div
         ref={contentRef}
-        className={cn(
-          "flex-1 overflow-y-auto px-4 py-8 sm:px-8 md:px-16 lg:px-24",
-          settings.reader.theme === "sepia" && "bg-amber-50 dark:bg-amber-950/20"
-        )}
+        className="flex-1 overflow-y-auto"
       >
-        <article className="mx-auto max-w-2xl">
-          {/* Meta */}
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{item.title}</h1>
+        <article className="mx-auto max-w-2xl px-6 py-12 sm:px-8 animate-fade-in">
+          {/* Article Header */}
+          <header className="mb-10">
+            <h1 className="font-display text-3xl font-medium leading-tight text-[var(--ink)] sm:text-4xl text-balance">
+              {item.title}
+            </h1>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-neutral-500">
-              {item.author && <span>{item.author}</span>}
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--ink-muted)]">
+              {item.author && (
+                <span className="font-medium text-[var(--ink)]">{item.author}</span>
+              )}
               <a
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline"
+                className="flex items-center gap-1 transition-colors hover:text-[var(--accent)]"
               >
                 {item.source || getDomain(item.url)}
+                <ExternalLink className="h-3 w-3" />
               </a>
               {isArticle && article.estimatedReadTime > 0 && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
                   {article.estimatedReadTime} min read
                 </span>
               )}
               {isPodcast && podcast.duration > 0 && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
                   {formatDuration(podcast.duration)}
                 </span>
               )}
-              <span>{formatDate(item.addedAt)}</span>
+              <span className="opacity-60">{formatDate(item.addedAt)}</span>
             </div>
 
             {item.thumbnail && (
               <img
                 src={item.thumbnail}
                 alt=""
-                className="mt-6 w-full rounded-lg object-cover"
+                className="mt-8 w-full rounded-xl object-cover shadow-lg"
               />
             )}
           </header>
@@ -161,19 +154,14 @@ export function ReaderView() {
           {/* Article Content */}
           {isArticle && article.content && (
             <div
-              className={cn(
-                "prose prose-neutral max-w-none dark:prose-invert",
-                fontSizeClasses[settings.reader.fontSize],
-                fontFamilyClasses[settings.reader.fontFamily],
-                lineSpacingClasses[settings.reader.lineSpacing]
-              )}
+              className="prose prose-dropcap"
               dangerouslySetInnerHTML={{ __html: article.content }}
             />
           )}
 
           {/* Podcast Player */}
           {isPodcast && (
-            <div className="rounded-lg border border-neutral-200 p-6 dark:border-neutral-800">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
               <audio
                 ref={audioRef}
                 src={podcast.audioUrl}
@@ -183,39 +171,38 @@ export function ReaderView() {
                   const progress = (audio.currentTime / audio.duration) * 100;
                   updateProgress(item.id, progress);
                 }}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
               />
 
-              <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col items-center gap-8">
                 {/* Progress bar */}
                 <div className="w-full">
-                  <div className="h-1 w-full rounded-full bg-neutral-200 dark:bg-neutral-700">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--border)]">
                     <div
-                      className="h-full rounded-full bg-neutral-900 transition-all dark:bg-white"
+                      className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)] transition-all"
                       style={{ width: `${item.progress}%` }}
                     />
                   </div>
-                  <div className="mt-2 flex justify-between text-xs text-neutral-400">
-                    <span>{formatDuration((podcast.currentTime || 0))}</span>
+                  <div className="mt-3 flex justify-between text-xs font-medium text-[var(--ink-muted)]">
+                    <span>{formatDuration(podcast.currentTime || 0)}</span>
                     <span>{formatDuration(podcast.duration || 0)}</span>
                   </div>
                 </div>
 
                 {/* Controls */}
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                <div className="flex items-center gap-6">
+                  <button
                     onClick={() => {
                       if (audioRef.current) {
                         audioRef.current.currentTime -= settings.podcast.skipBack;
                       }
                     }}
+                    className="rounded-full p-3 text-[var(--ink-muted)] transition-all hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
                   >
-                    <SkipBack className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    <SkipBack className="h-6 w-6" />
+                  </button>
+                  <button
                     onClick={() => {
                       if (audioRef.current) {
                         if (audioRef.current.paused) {
@@ -225,27 +212,31 @@ export function ReaderView() {
                         }
                       }
                     }}
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg transition-all hover:bg-[var(--accent-dark)] hover:shadow-xl"
                   >
-                    <Play className="h-6 w-6" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                    {isPlaying ? (
+                      <Pause className="h-7 w-7" />
+                    ) : (
+                      <Play className="h-7 w-7 translate-x-0.5" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => {
                       if (audioRef.current) {
                         audioRef.current.currentTime += settings.podcast.skipForward;
                       }
                     }}
+                    className="rounded-full p-3 text-[var(--ink-muted)] transition-all hover:bg-[var(--surface-raised)] hover:text-[var(--ink)]"
                   >
-                    <SkipForward className="h-5 w-5" />
-                  </Button>
+                    <SkipForward className="h-6 w-6" />
+                  </button>
                 </div>
 
                 {/* Speed control */}
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-neutral-400">Speed:</span>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-[var(--ink-muted)]">Speed</span>
                   <select
-                    className="rounded border border-neutral-200 bg-transparent px-2 py-1 dark:border-neutral-700"
+                    className="rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-1.5 font-medium text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
                     defaultValue={settings.podcast.defaultSpeed}
                     onChange={(e) => {
                       if (audioRef.current) {
@@ -268,18 +259,18 @@ export function ReaderView() {
 
           {/* Fallback for other types */}
           {!isArticle && !isPodcast && (
-            <div className="rounded-lg border border-neutral-200 p-6 text-center dark:border-neutral-800">
-              <p className="text-neutral-500">
-                {item.description || "No preview available."}
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
+              <p className="text-[var(--ink-muted)]">
+                {item.description || "No preview available for this content."}
               </p>
               <a
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 font-medium text-white transition-all hover:bg-[var(--accent-dark)]"
               >
                 <ExternalLink className="h-4 w-4" />
-                Open Original
+                View Original
               </a>
             </div>
           )}
@@ -288,9 +279,9 @@ export function ReaderView() {
 
       {/* Progress bar at bottom for articles */}
       {isArticle && (
-        <div className="h-1 bg-neutral-100 dark:bg-neutral-800">
+        <div className="h-1 bg-[var(--border)]">
           <div
-            className="h-full bg-green-500 transition-all"
+            className="h-full bg-gradient-to-r from-[var(--sage)] to-[var(--sage-light)] transition-all duration-300"
             style={{ width: `${item.progress}%` }}
           />
         </div>
