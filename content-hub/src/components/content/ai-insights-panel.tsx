@@ -28,15 +28,18 @@ export function AIInsightsPanel({ item }: AIInsightsPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(settings.ai.apiKey || "");
 
-  const hasApiKey = !!settings.ai.apiKey;
+  // Safely access AI settings with fallback for persisted data without ai property
+  const aiSettings = settings.ai || { provider: "openai", autoSummarize: false, autoTag: false };
+  const [apiKeyInput, setApiKeyInput] = useState(aiSettings.apiKey || "");
+
+  const hasApiKey = !!aiSettings.apiKey;
   const analysis = item.aiAnalysis;
   const isArticle = item.type === "article";
   const article = item as Article;
 
   const handleAnalyze = async () => {
-    if (!settings.ai.apiKey) {
+    if (!aiSettings.apiKey) {
       setShowApiKeyInput(true);
       return;
     }
@@ -57,7 +60,7 @@ export function AIInsightsPanel({ item }: AIInsightsPanelProps) {
         body: JSON.stringify({
           action: "full-analysis",
           content,
-          apiKey: settings.ai.apiKey,
+          apiKey: aiSettings.apiKey,
         }),
       });
 
@@ -87,7 +90,7 @@ export function AIInsightsPanel({ item }: AIInsightsPanelProps) {
     if (apiKeyInput.trim()) {
       updateSettings({
         ai: {
-          ...settings.ai,
+          ...aiSettings,
           apiKey: apiKeyInput.trim(),
         },
       });

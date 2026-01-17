@@ -230,15 +230,19 @@ export const useContentStore = create<ContentState>()(
       },
 
       updateSettings: (newSettings) => {
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            ...newSettings,
-            reader: { ...state.settings.reader, ...newSettings.reader },
-            podcast: { ...state.settings.podcast, ...newSettings.podcast },
-            ai: { ...state.settings.ai, ...newSettings.ai },
-          },
-        }));
+        set((state) => {
+          // Ensure ai settings exist with defaults for old persisted data
+          const currentAi = state.settings.ai || { provider: "openai", autoSummarize: false, autoTag: false };
+          return {
+            settings: {
+              ...state.settings,
+              ...newSettings,
+              reader: { ...state.settings.reader, ...newSettings.reader },
+              podcast: { ...state.settings.podcast, ...newSettings.podcast },
+              ai: { ...currentAi, ...newSettings.ai },
+            },
+          };
+        });
       },
 
       updateAIAnalysis: (id, analysis) => {
@@ -273,6 +277,20 @@ export const useContentStore = create<ContentState>()(
     }),
     {
       name: "content-hub-storage",
+      // Migration to handle old persisted data without AI settings
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as ContentState;
+        // Ensure settings.ai exists for old persisted data
+        if (state.settings && !state.settings.ai) {
+          state.settings.ai = {
+            provider: "openai",
+            autoSummarize: false,
+            autoTag: false,
+          };
+        }
+        return state;
+      },
+      version: 1,
     }
   )
 );
